@@ -1,0 +1,17 @@
+{
+  "name": "testapi",
+  "version": "1.0.0",
+  "private": true,
+  "description": "test project",
+  "main": "app.js",
+  "scripts": {
+    "prestart": "node src/migrate.js",
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.16.4",
+    "express-form": "^0.12.6",
+    "pg": "^7.8.0",
+    "postgrator": "^3.8.0"
+  }
+}
