@@ -1,14 +1,12 @@
 const Postgrator = require('postgrator');
-const config = require('./shared/config');
+const path = require('path');
+//const config = require('./shared/config');
 
 const postgrator = new Postgrator({
   driver: 'pg',
-  migrationDirectory: '../migrations/',
-  host: '127.0.0.1',
-  port: 5432,
-  database: 'testdb',
-  username: 'root',
-  password: '111111'
+  migrationDirectory: path.resolve(__dirname, '../migrations'),
+  connectionString: 'postgres://root:111111@database:5432/testdb',
+  ssl: false,
 });
 
 postgrator

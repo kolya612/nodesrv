@@ -3,102 +3,139 @@ const express = require("express"),
     	form = require("express-form"),
     	field = form.field;
 
-// const { User } = require('pg');
-// const user = new User(
-//   user: 'root',
-//   host: 'database.server.com',
-//   database: 'mydb',
-//   password: 'secretpassword',
-//   port: 3211	
-// );
+const { Pool } = require('pg');
+const connectionString = 'postgres://root:111111@database:5432/testdb'
+const sql = new Pool({
+  connectionString: connectionString,
+});
 
 var app = express();
 
-
-app.get("/", function(request, response){
-    response.status(500).send("Error");
-});
-
 // ADD USER
 app.post("/users",
-		form(
-			field("name").trim().required().is(/^[a-zA-Z ]+$/).minLength(2).maxLength(50),
-			field("email").trim().required().isEmail(),
-			field("sex").trim().required().is(/^[1-2]{1}$/)
-		),
+	form(
+		field("name").trim().required().is(/^[a-zA-Zа-яА-ЯёЁ]+$/).minLength(2).maxLength(50),
+		field("email").trim().required().isEmail(),
+		field("sex").trim().required().is(/^[1-2]{1}$/)
+	),
+	function (req, rs) {
 
-		function(req, res){
-			if (!req.form.isValid) {
-
-				var errUser = {};
-
-				errUser['errors'] = req.form.errors;
-
-				if(req.form.getErrors("name") != ''){
-					errUser['name'] = 'error';
-				} 
-				if(req.form.getErrors("email") != ''){
-					errUser['email'] = 'error';
-				}
-				if(req.form.getErrors("sex") != ''){
-					errUser['sex'] = 'error';
-				}
-
-				res.status(500).send(errUser);
-
-			} else {
-				// положим в базу данных получив id
-
-
-
-				// await client.connect()
-
-				// const res = await client.query('SELECT $1::text as message', ['Hello world!'])
-				// console.log(res.rows[0].message) // Hello world!
-				// await client.end()
-
-				res.status(200).send("<h2>POST метод USERS - добавление пользователя</h2>");
-			}
-
-
-			
-			// вернем результат json
-		}
-);
-
-
-
-
-
-
-
-app.get("/users", function(req, res){
-	res.send("<h2>Получение перечня всех пользователей</h2>");
-});
-
-app.get("/users/:id", 
-	
-	form(field("id").trim().required().is(/^[0-9]+$/)), 
-
-	function(req, res){	
 		if (!req.form.isValid) {
-			res.send("<h2>НЕ ТО: " + req.form.id + " </h2>");
-
+			rs.status(406).send(req.form.getErrors());
 		} else {
-
-			res.send("<h2>Получение данных об одном пользователе " + req.form.id + " </h2>");
+			// положим в базу данных получив id     req.form.name
+			const text = 'INSERT INTO users (name, email, sex) VALUES ($1,$2,$3) RETURNING *';
+			const values = [req.form.name, req.form.email, req.form.sex];
+			sql.query(text, values, (err, res) => {
+			  	if (err) {
+			    	rs.status(500).send(err.stack);
+			  	} else {
+			  		// Created
+			    	rs.status(201).send(res.rows[0]); 
+			  	}
+			})
 		}
 	}
 );
 
+// GET USERS
+app.get("/users", function(req, rs){
 
-
-
-app.put("/users/:id", function(req, res){
-	res.send("<h2>PUTT - редактирование пользователя</h2>");
+	const text = 'SELECT * FROM users';
+	sql.query(text, (err, res) => {
+		if (err) {
+		    rs.status(500).send(err.stack);
+		} else {
+		  	if(res.rowCount == 0){
+		  		//No content
+				rs.status(204).send(res.rows); 
+		  	} else {
+		  		rs.status(200).send(res.rows); 
+		  	}
+		}
+	})
 });
-app.delete("/users/:id", function(req, res){
-	res.send("<h2>DELETE - удаление пользователя</h2>");
+
+// GET USER BY ID
+app.get("/users/:id", 
+	form(field("id").trim().required().is(/^[0-9]+$/)), 
+	function(req, rs){	
+		if (!req.form.isValid) {
+			rs.status(406).send(req.form.getErrors());
+		} else {
+			// положим в базу данных получив id     req.form.name
+			const text = 'SELECT * FROM users WHERE id = $1';
+			const values = [req.form.id];
+			sql.query(text, values, (err, res) => {
+			  	if (err) {
+			    	rs.status(500).send(err.stack);
+			  	} else {
+				  	if(res.rowCount == 0){
+				  		//No content
+						rs.status(204).send(); 
+				  	} else {
+				  		rs.status(200).send(res.rows); 
+				  	}
+			  	}
+			})
+		}
+	}
+);
+
+// UPDATE USER
+app.put("/users/:id", 
+
+	form(
+		field("id").trim().required().is(/^[0-9]+$/), 
+		field("name").trim().required().is(/^[a-zA-Zа-яА-ЯёЁ]+$/).minLength(2).maxLength(50),
+		field("email").trim().required().isEmail(),
+		field("sex").trim().required().is(/^[1-2]{1}$/)
+	),
+	function (req, rs) {
+		if (!req.form.isValid) {
+			rs.status(406).send(req.form.getErrors());
+		} else {
+			// положим в базу данных получив id     req.form.name
+			const text = 'UPDATE users SET name = $1, email = $2, sex = $3 WHERE id = $4';
+			const values = [req.form.name, req.form.email, req.form.sex, req.form.id];
+			sql.query(text, values, (err, res) => {
+			  	if (err) {
+			    	rs.status(500).send(err.stack);
+			  	} else {
+			  		// Created
+			    	rs.status(201).send(res.rows[0]); 
+			  	}
+			})
+		}
+	}
+);
+
+// DELETE USER
+app.delete("/users/:id",
+	form(field("id").trim().required().is(/^[0-9]+$/)), 
+	function(req, rs){	
+
+		if (!req.form.isValid) {
+			rs.status(406).send(req.form.getErrors());
+		} else {
+			// положим в базу данных получив id     req.form.name
+			const text = 'DELETE FROM users WHERE id = $1';
+			const values = [req.form.id];
+			sql.query(text, values, (err, res) => {
+			  	if (err) {
+			    	rs.status(500).send(err.stack);
+			  	} else {
+				  	rs.status(204).send();
+			  	}
+			})
+		}
+	}
+);
+
+// 404
+app.all("*", function(request, response){
+	//Bad Request
+    response.status(404).send("404");
 });
 
 // начинаем прослушивать подключения на 3000 порту

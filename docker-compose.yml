@@ -1,15 +1,6 @@
 version: "2.4"
 
 services:
-  noda:
-    build: .
-    restart: always
-    environment:
-      DATABASE_URL: "postgres://root:111111@database:5432/testdb"
-    ports:
-    - 8889:3000
-
-
   database:
     image: postgres:9.6.11-alpine
     restart: always
@@ -18,4 +9,13 @@ services:
     environment:
       POSTGRES_PASSWORD: "111111"
       POSTGRES_USER: "root"
-      POSTGRES_DB: test_db
+      POSTGRES_DB: testdb  
+  noda:
+    build: .
+    depends_on:
+    - database
+    restart: always
+    environment:
+      DATABASE_URL: "postgres://root:111111@database:5432/testdb"
+    ports:
+    - 8889:3000
