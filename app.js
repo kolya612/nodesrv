@@ -31,7 +31,7 @@ app.post("/users",
 			  	if (err) {
 			    	return rs.status(500).send(err.stack);
 			  	} 
-			   	rs.status(200).send(res.rows[0]); 
+			   	rs.status(201).send(res.rows[0]); 
 			})
 	}
 );
@@ -114,7 +114,7 @@ app.delete("/users/:id",
 			  	if (err) {
 			    	return rs.status(500).send(err.stack);
 			  	}
-			  	rs.status(200).send({'message':'User successfully deleted'});
+			  	rs.status(204).send({'message':'User successfully deleted'});
 			})
 	}
 );
@@ -122,7 +122,7 @@ app.delete("/users/:id",
 // 404
 app.all("*", function(req, rs){
 	//Bad Request
-    rs.status(404).send("404");
+    rs.status(404).send({'MessageError':'404'});
 });
 
 
