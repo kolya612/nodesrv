@@ -1,11 +1,10 @@
 const Postgrator = require('postgrator');
 const path = require('path');
-//const config = require('./shared/config');
 
 const postgrator = new Postgrator({
   driver: 'pg',
   migrationDirectory: path.resolve(__dirname, '../migrations'),
-  connectionString: 'postgres://root:111111@database:5432/testdb',
+  connectionString: process.env.DATABASE_URL,
   ssl: false,
 });
 

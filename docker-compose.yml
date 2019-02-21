@@ -7,15 +7,15 @@ services:
     ports:
     - 9999:5432
     environment:
-      POSTGRES_PASSWORD: "111111"
-      POSTGRES_USER: "root"
-      POSTGRES_DB: testdb  
+      POSTGRES_PASSWORD: "${FP_DATABASE_PASS}"
+      POSTGRES_USER: "${FP_DATABASE_USER}"
+      POSTGRES_DB: "${FP_DATABASE_DBNAME}"
   noda:
     build: .
     depends_on:
     - database
     restart: always
     environment:
-      DATABASE_URL: "postgres://root:111111@database:5432/testdb"
+      DATABASE_URL: "${FP_DATABASE_URL}"
     ports:
     - 8889:3000
