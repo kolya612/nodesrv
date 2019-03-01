@@ -1,6 +1,5 @@
 const Postgrator = require('postgrator');
 const path = require('path');
-
 const postgrator = new Postgrator({
   driver: 'pg',
   migrationDirectory: path.resolve(__dirname, '../migrations'),

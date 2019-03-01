@@ -1,10 +1,12 @@
 const { ValidationError } = require('./ValidationError');
+const { KafkaEventBus } = require('./KafkaEventBus');
 const express = require("express");
 const app = express();
 const form = require("express-form");
-const field = form.field;
 const connectionString = process.env.DATABASE_URL;
 const { Pool } = require("pg");
+const field = form.field;
+const Kafka = new KafkaEventBus();
 const sql = new Pool({ connectionString,});
 
 /** 
@@ -41,12 +43,14 @@ app.get("/users",
 	async (req, rs) => {
 		const text = 'SELECT * FROM users';
 		await sql.query(text, (err, res) => {
+			Kafka.sender('qqqqqqqqqqqq','node-test-0');
 			if (err) {
 			    return rs.status(500).send(err.stack);
 			} 
 		  	if(res.rowCount == 0){
 				return rs.status(404).send({ 'errorMessage': 'Users not found' }); 
 		  	}
+
 	  		rs.status(200).send(res.rows); 
 		});
 	},
