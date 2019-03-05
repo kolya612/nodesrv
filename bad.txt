@@ -1,0 +1,114 @@
+
+
+/*||||||||||||||||||||||||||||||||||||||||||||||||||||||||||*/
+/*********************** BAD WARIANT ************************/
+/*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
+
+
+/* так работает но нет обработки ошибки в SQL */
+app.get("000/users", 
+	async (req, rs) => {
+		const text = 'SELECT * FROM users WHERE id=4';
+		const dbAnsw = await sql.query(text);
+	  	if(dbAnsw.rowCount == 0){
+			rs.status(404).send({ 'errorMessage': 'Users not found' }); 
+	  	} 
+	  	rs.status(200).send(dbAnsw.rows);
+	},
+
+);
+
+/* так все работает кроме той ситуации когда ошибка в SQL - мы не обрабатываем эту ошибку и скрипт вешается */
+app.get("00/users", 
+	async (req, rs) => {
+		const text = 'SELECT * FROM users WHERE idx=4';
+		const dbAnsw = await sql.query(text);
+	  	if(dbAnsw.rowCount == 0){
+			rs.status(404).send({ 'errorMessage': 'Users not found' }); 
+	  	} 
+	  	rs.status(200).send(dbAnsw.rows);
+	},
+
+);
+
+
+
+
+// GET USERS
+app.get("0/users", function(req, rs){
+
+	const text = 'SELECT * FROM users';
+	sql.query(text, (err, res) => {
+		if (err) {
+		    return rs.status(500).send(err.stack);
+		} 
+	  	if(res.rowCount == 0){
+			return rs.status(404).send({'errorMessage':'Users not found'}); 
+	  	}
+	  	rs.status(200).send(res.rows); 
+	})
+});
+
+/** 
+ * GET USERS  
+ */
+app.get("1/users", 
+	async (req, rs) => {
+		const text = 'SELECT * FROM users';
+	 	try{
+	 		const result = await sql.query(text);
+	 	} catch (err){
+	 		throw err;
+	 	}
+
+		rs.send(result);
+		// Не работает так как нам тут не известен result. Заработает если перенести в try
+	},
+);
+
+
+/** 
+ * GET USERS  
+ */
+app.get("2/users", 
+	async (req, rs) => {
+		const text = 'SELECT * FROM users';
+		console.log(111);		
+		const result = await sql.query(text, (err, res) => {
+			if (err) {
+			    return {status: 500, data: err.stack};
+			} 
+		  	if(res.rowCount == 0){
+				return {status: 404, data: { 'errorMessage': 'Users not found' }}; 
+		  	}
+			console.log(222);
+		  	return {status: 200, data: res.rows}
+		});
+		console.log(333);	
+		rs.status(result.status).send(result.data);
+	},
+);
+
+// Не работает так как порядок выполнения 111 -> 333 -> 222
+
+
+/** 
+ * GET USERS  -  рабочая но не верная с точки зрения асинхронности
+ */
+app.get("3/users", 
+	async (req, rs) => {
+		const text = 'SELECT * FROM users';
+		await sql.query(text, (err, res) => {
+			//producer.send('test-topic',0,'qqqqqqqqqqqq',0);
+			if (err) {
+			    return rs.status(500).send(err.stack);
+			} 
+		  	if(res.rowCount == 0){
+				return rs.status(404).send({ 'errorMessage': 'Users not found' }); 
+		  	}
+
+	  		rs.status(200).send(res.rows); 
+		});
+	},
+);
+// работает но код не чистый

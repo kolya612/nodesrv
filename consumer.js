@@ -4,7 +4,7 @@ var Offset = kafka.Offset;
 var Client = kafka.KafkaClient;
 var client = new Client('127.0.0.1:2181');
 
-var topic = 'node-test-0';
+var topic = 'test-topic';
 var partition = 0;
 
 var topics = [{

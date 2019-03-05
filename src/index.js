@@ -1,13 +1,16 @@
 const { ValidationError } = require('./ValidationError');
-const { KafkaEventBus } = require('./KafkaEventBus');
+//const { KafkaEventBus } = require('./KafkaEventBus');
 const express = require("express");
 const app = express();
 const form = require("express-form");
 const connectionString = process.env.DATABASE_URL;
 const { Pool } = require("pg");
 const field = form.field;
-const Kafka = new KafkaEventBus();
+//const Kafka = new KafkaEventBus();
 const sql = new Pool({ connectionString,});
+
+
+
 
 /** 
  * ADD USER 
@@ -32,52 +35,6 @@ app.post("/users",
 		    	return rs.status(500).send(err.stack);
 		  	} 
 		   	rs.status(201).send(res.rows[0]); 
-		});
-	}
-);
-
-/** 
- * GET USERS  
- */
-app.get("/users", 
-	async (req, rs) => {
-		const text = 'SELECT * FROM users';
-		await sql.query(text, (err, res) => {
-			Kafka.sender('qqqqqqqqqqqq','node-test-0');
-			if (err) {
-			    return rs.status(500).send(err.stack);
-			} 
-		  	if(res.rowCount == 0){
-				return rs.status(404).send({ 'errorMessage': 'Users not found' }); 
-		  	}
-
-	  		rs.status(200).send(res.rows); 
-		});
-	},
-);
-
-/** 
- * GET USER BY ID 
- */
-app.get("/users/:id", 
-	form(field("id").trim().required().is(/^[0-9]+$/)), 
-	(req, rs, next) => {	
-		if (!req.form.isValid) {
-			throw new ValidationError(req.form.getErrors());
-		}
-		next();
-	}, 
-	async (req, rs, next) => {
-		const text = 'SELECT * FROM users WHERE id = $1';
-		const values = [req.form.id];
-		await sql.query(text, values, (err, res) => {
-		  	if (err) {
-		    	return rs.status(500).send(err.stack);
-		  	} 
-		  	if(res.rowCount == 0){
-				return rs.status(404).send({ 'errorMessage': 'User not found' }); 
-		  	} 
-		  	rs.status(200).send(res.rows); 
 		});
 	}
 );
@@ -132,6 +89,58 @@ app.delete("/users/:id",
 		});
 	}
 );
+
+
+
+
+
+
+/** 
+ * GET USERS  
+ */
+app.get("/users", 
+	async (req, rs) => {
+		try{
+			const querySql = 'SELECT * FROM users';
+			const { rowCount, rows:users } = await sql.query(querySql);
+		  	if(rowCount == 0){
+				rs.status(404).send({ 'errorMessage': 'Users not found' }); 
+		  	} 
+		  	rs.status(200).send(users);
+	    } catch (err){
+			rs.status(500).send({ 'errorMessage': 'Something went wrong' });
+		}
+	},
+
+);
+
+
+/** 
+ * GET USER BY ID 
+ */
+app.get("/users/:id", 
+	form(field("id").trim().required().is(/^[0-9]+$/)), 
+	(req, rs, next) => {	
+		if (!req.form.isValid) {
+			throw new ValidationError(req.form.getErrors());
+		}
+		next();
+	}, 
+	async (req, rs) => {
+		try{
+			const querySql = 'SELECT * FROM users WHERE id = $1';
+			const valueForSql = [req.form.id];
+			const { rowCount, rows:user } = await sql.query(querySql, valueForSql);
+		  	if(rowCount == 0){
+				rs.status(404).send({ 'errorMessage': 'Users not found' }); 
+		  	} 
+		  	rs.status(200).send(user);
+		} catch (err){
+			rs.status(500).send({ 'errorMessage': 'Something went wrong' });
+		}
+	},
+);
+
 
 /** 
  * 404
