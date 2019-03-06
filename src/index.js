@@ -9,9 +9,6 @@ const field = form.field;
 //const Kafka = new KafkaEventBus();
 const sql = new Pool({ connectionString,});
 
-
-
-
 /** 
  * ADD USER 
  */
@@ -28,14 +25,14 @@ app.post("/users",
 		next();
 	}, 
 	async (req, rs, next) => {
-		const text = 'INSERT INTO users (name, email, sex) VALUES ($1,$2,$3) RETURNING *';
-		const values = [req.form.name, req.form.email, req.form.sex];
-		await sql.query(text, values, (err, res) => {
-		  	if (err) {
-		    	return rs.status(500).send(err.stack);
-		  	} 
-		   	rs.status(201).send(res.rows[0]); 
-		});
+		try{
+			const querySql = 'INSERT INTO users (name, email, sex) VALUES ($1,$2,$3) RETURNING *';
+			const valueForSql = [req.form.name, req.form.email, req.form.sex];
+			const { rows:user } = await sql.query(querySql, valueForSql);
+			rs.status(200).send(user[0]);
+		} catch (err){
+			rs.status(500).send({ 'errorMessage': 'Something went wrong' });
+		}		
 	}
 );
 
@@ -56,14 +53,14 @@ app.put("/users/:id",
 		next();
 	}, 
 	async (req, rs, next) => {
-		const text = 'UPDATE users SET name = $1, email = $2, sex = $3 WHERE id = $4 RETURNING *';
-		const values = [req.form.name, req.form.email, req.form.sex, req.form.id];
-		await sql.query(text, values, (err, res) => {
-			if (err) {
-		    	return rs.status(500).send(err.stack);
-		  	}
-		    rs.status(200).send(res.rows[0]); 
-		});
+		try{
+			const querySql = 'UPDATE users SET name = $1, email = $2, sex = $3 WHERE id = $4 RETURNING *';
+			const valueForSql = [req.form.name, req.form.email, req.form.sex, req.form.id];
+			const { rows:user } = await sql.query(querySql, valueForSql);
+			rs.status(200).send(user[0]);
+		} catch (err){
+			rs.status(500).send({ 'errorMessage': 'Something went wrong' });
+		}
 	}
 );
 
@@ -79,21 +76,16 @@ app.delete("/users/:id",
 		next();
 	}, 
 	async (req, rs, next) => {
-		const text = 'DELETE FROM users WHERE id = $1';
-		const values = [req.form.id];
-		await sql.query(text, values, (err, res) => {
-		  	if (err) {
-		    	return rs.status(500).send(err.stack);
-		  	}
-		  	rs.status(204).send({ 'message': 'User successfully deleted' });
-		});
+		try{
+			const querySql = 'DELETE FROM users WHERE id = $1';
+			const valueForSql = [req.form.id];
+			await sql.query(querySql, valueForSql);
+			rs.status(200).send({ 'message': 'User successfully deleted' });
+		} catch (err){
+			rs.status(500).send({ 'errorMessage': 'Something went wrong' });
+		}
 	}
 );
-
-
-
-
-
 
 /** 
  * GET USERS  
@@ -108,12 +100,12 @@ app.get("/users",
 		  	} 
 		  	rs.status(200).send(users);
 	    } catch (err){
+	    	//rs.status(500).send(err.stack);
 			rs.status(500).send({ 'errorMessage': 'Something went wrong' });
 		}
 	},
 
 );
-
 
 /** 
  * GET USER BY ID 
@@ -126,7 +118,7 @@ app.get("/users/:id",
 		}
 		next();
 	}, 
-	async (req, rs) => {
+	async (req, rs, next) => {
 		try{
 			const querySql = 'SELECT * FROM users WHERE id = $1';
 			const valueForSql = [req.form.id];
@@ -140,7 +132,6 @@ app.get("/users/:id",
 		}
 	},
 );
-
 
 /** 
  * 404
